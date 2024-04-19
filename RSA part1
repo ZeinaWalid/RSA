@@ -1,0 +1,122 @@
+import time
+import random
+import math
+# Generating two choices of the bit lenght
+print("Choose the bit lenght: ")
+print("1. 8-bits")
+print("2. 16-bits")
+choice = input("Enter your choice (1 or 2):")
+if choice == "1":
+    bit_lenght = 8
+elif choice == "2":
+    bit_lenght = 16
+else:
+    print("Invalid choice! Exiting...")
+    exit()
+# Function to generate RSA keys
+def generate_rsa_keys(bit_lenght):
+    p = int(input("Enter a prime number (p):"))
+    while not is_prime(p):
+        p=int(input("Error!, please enter a prime number:"))
+    q = int(input("Enter a prime number (q):"))
+    while not is_prime(q):
+        q=int(input("Error!, please enter a prime number:"))
+    if p == q:
+        print("The two prime values cannot be equal")
+        raise ValueError("The two prime values cannot be equal")
+    n = p * q
+    # Checking if n exceeds the maximuim value allowed for the chosen bit lenght
+    if n > 255 and bit_lenght == 8:
+        print("n is greater than 8 bits")
+        raise ValueError(f"{n} is not an 8 bit number")
+    if n > 65532 and bit_lenght == 16:
+        print("n is greater than 16 bits")
+        raise ValueError(f"{n} is not a 16 bit number")
+    eul = (p - 1) * (q - 1)
+    e = choose_public_exponent(eul)
+    # Start measuring runtime
+    start=time.perf_counter()
+    d = modular_inverse(e, eul)
+    end = time.perf_counter()
+    runtime = end - start
+    print(f"Run time is {runtime} seconds")
+    # Ensuring e is not equal to d
+    while e == d:
+        e = choose_public_exponent(eul)
+        d = modular_inverse(e, eul)
+
+    public_key = (n, e)
+    private_key = (n, d)
+    
+    return n, public_key, private_key
+# Function in order to check if the number is prime
+def is_prime(num):
+    if num < 2:
+        return False
+    for i in range(2, int(math.sqrt(num))+ 1):
+        if num % i == 0:
+            return False
+    return True
+
+
+# Function to choose a public exponent
+def choose_public_exponent(eul):
+ 
+    e = random.randrange(2, eul)
+    while math.gcd(e, eul) != 1:
+        e = random.randrange(2, eul)
+    return e
+# Extended Euclidean algorithm to find modular inverse
+def extended_euclidean_algorithm(a, b):
+    
+    if b == 0:
+        return a, 1, 0
+    gcd, x1, y1 = extended_euclidean_algorithm(b, a % b)
+    x = y1
+    y = x1 - (a // b) * y1
+    return gcd, x, y
+# Modular inverse function
+def modular_inverse(e, eul):
+ 
+    gcd, x, _ = extended_euclidean_algorithm(e, eul)
+    if gcd == 1:
+        return x % eul
+    else:
+        raise ValueError("Inverse does not exists!")
+    
+# Function for encryption
+def encryption(message, public_key):
+    n, e= public_key
+    if message >= n:
+        print( ValueError("The message you have entered cannot be is larger than n "))
+        raise( ValueError("The message you have entered cannot be is larger than n "))
+    return pow(message, e, n)
+#  Function for decryption
+def decryption(c, private_key):
+    n, d = private_key
+    return pow(c, d, n)
+#  Factorize to factorize a number
+def factorize(n):
+    factors = []
+    for i in range(2, int(math.sqrt(n)) + 1):
+        while n % i == 0:
+            factors.append(i)
+            n //= i
+    if n > 1:
+        factors.append(n)
+    return factors
+
+# Generate RSA keys
+n, public_key, private_key = generate_rsa_keys(bit_lenght)
+
+
+print("Public Key (n, e):", public_key)
+print("Private Key (n, d):", private_key)
+print("Prime factors of n:",factorize(n))
+message = int(input("Enter the message you want to encrypt: "))
+encrypted_message= encryption(message, public_key)
+decrpted_message= decryption(encrypted_message, private_key)
+print("Original Message:", message)
+print("Encrypted Message:", encrypted_message)
+print("Decrypted Message", decrpted_message)
+
